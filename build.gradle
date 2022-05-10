@@ -1,0 +1,86 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.spring.io/milestone" }
+        maven { url 'https://repo.spring.io/libs-snapshot' }
+    }
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.1.RELEASE'
+    }
+}
+
+plugins {
+    id "java"
+    id "org.sonarqube" version "3.3"
+    id "jacoco"
+}
+
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+bootJar {
+    baseName('unit-testing-app')
+    version('1.0.0')
+}
+
+jacoco {
+    toolVersion = "0.8.8"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+    }
+    afterEvaluate {
+        classDirectories.from = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    'com/cedaniel200/practice/config/**',
+                    'com/cedaniel200/practice/console/**',
+                    'com/cedaniel200/practice/model/**',
+                    'com/cedaniel200/practice/App*'
+            ])
+        })
+    }
+}
+
+sonarqube {
+    properties {
+        property "sonar.branch.name", gitBranch()
+        property "sonar.branch.targe", gitBranch()
+        property "sonar.projectKey", "taller-pruebas-unitarias"
+        property "sonar.organization", "capacitacion-github"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.spring.io/milestone" }
+    maven {
+        url 'https://repo.spring.io/libs-snapshot'
+    }
+}
+
+dependencies {
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.19.0'
+    testImplementation group: 'org.mockito', name: 'mockito-inline', version: '2.19.0'
+    testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.0'
+    testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.0'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    testImplementation 'pl.pragmatists:JUnitParams:1.1.1'
+
+    implementation 'org.springframework.boot:spring-boot-starter:2.6.7'
+    implementation 'org.springframework.shell:spring-shell-starter:2.0.1.RELEASE'
+    implementation 'org.springframework.boot:spring-boot-starter-mail:2.6.7'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+}
+
+def gitBranch() {
+    def branch = ""
+    def proc = "git rev-parse --abbrev-ref HEAD".execute()
+    proc.in.eachLine { line -> branch = line }
+    proc.err.eachLine { line -> println line }
+    proc.waitFor()
+    branch
+}
